@@ -1,4 +1,6 @@
-﻿using OneHub.Common.WebSockets;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,15 +9,13 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     internal static class ImplBuilder
     {
         public static Func<object, IMessageHandler> BuildWebSocketImplFactory<T>(ProtocolBuilder.ProtocolInfo protocolInfo)
             where T : class
         {
-            var options = JsonOptions.CreateSerializerOptions();
-
             Dictionary<string, Func<T, MessageBuffer, Task>> handlers = new();
             foreach (var action in protocolInfo.Apis)
             {
@@ -25,7 +25,7 @@ namespace OneHub.Common.Protocols.Builder
                 {
                     throw new ProtocolBuilderException($"Api {action.name} is not defined in interface {typeof(T)}.");
                 }
-                var handler = EchoRequestHelper.MakeResponseHandler<T>(method, action.request, action.response, options);
+                var handler = EchoRequestHelper.MakeResponseHandler<T>(method, action.request, action.response);
                 handlers.Add(JsonOptions.ConvertString(action.name), handler);
             }
 
@@ -39,7 +39,7 @@ namespace OneHub.Common.Protocols.Builder
                 }
                 var helper = typeof(EchoRequestHelper).GetMethod(nameof(EchoRequestHelper.MakeEventSubscription), BindingFlags.NonPublic | BindingFlags.Static)
                     .MakeGenericMethod(typeof(T), e.data);
-                var subscription = (Action<V11ProtocolImplMessageHandler<T>, T>)helper.Invoke(null, new object[] { eventInfo, options });
+                var subscription = (Action<V11ProtocolImplMessageHandler<T>, T>)helper.Invoke(null, new object[] { eventInfo });
                 subscriptions.Add(subscription);
             }
 
@@ -100,6 +100,7 @@ namespace OneHub.Common.Protocols.Builder
                 {
                     _ = h(_protocol, message);
                 }
+                //Note that the message is reused for sending the response and is not disposed here.
             }
 
             public void Cancel()

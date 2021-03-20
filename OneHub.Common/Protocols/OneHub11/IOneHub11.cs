@@ -1,4 +1,5 @@
-﻿using OneHub.Common.Protocols.OneHub11.API;
+﻿using OneHub.Common.Definitions;
+using OneHub.Common.Protocols.OneHub11.API;
 using OneHub.Common.Protocols.OneHub11.Events;
 using System;
 using System.Collections.Generic;

@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols
+namespace OneHub.Common.Protocols.OneX
 {
     internal sealed class Enum32JsonConverter<T> : JsonConverter<T> where T : unmanaged, Enum
     {

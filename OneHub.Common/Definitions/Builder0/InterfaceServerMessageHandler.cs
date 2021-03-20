@@ -1,4 +1,5 @@
-﻿using OneHub.Common.WebSockets;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     //This is only used by the dynamically generated module.
     //Be careful when using in other places: the message handler method must finish synchronously (buffer will be disposed).

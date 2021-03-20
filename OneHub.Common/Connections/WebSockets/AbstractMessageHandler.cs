@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections.WebSockets
 {
     [SuppressMessage("Reliability", "CA2012:Use ValueTasks correctly",
         Justification = "ValueTasks are only used to wrap cancellation and exception.")]

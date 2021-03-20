@@ -1,11 +1,12 @@
-﻿using System;
+﻿using OneHub.Common.Connections.WebSockets;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections
 {
     public sealed class MessageBuffer : IDisposable
     {
@@ -14,7 +15,7 @@ namespace OneHub.Common.WebSockets
 
         //Use default constructor to allow exposing the underlying buffer.
         internal readonly MemoryStream Data;
-        private readonly Utf8JsonWriter _jsonWriter;
+        internal readonly Utf8JsonWriter JsonWriter;
 
         private JsonDocument _jsonDocument;
         private bool _hasJsonDocument;
@@ -30,7 +31,7 @@ namespace OneHub.Common.WebSockets
             }
             Owner = owner;
             Data = new();
-            _jsonWriter = new Utf8JsonWriter(Data);
+            JsonWriter = new Utf8JsonWriter(Data);
         }
 
         public void Dispose()
@@ -86,7 +87,7 @@ namespace OneHub.Common.WebSockets
         public void WriteJson<T>(T obj, JsonSerializerOptions options)
         {
             Clear();
-            JsonSerializer.Serialize(_jsonWriter, obj, options);
+            JsonSerializer.Serialize(JsonWriter, obj, options);
         }
 
         //The returned object is cached and may be shared by other copies. Use immutable types if possible.
@@ -118,34 +119,6 @@ namespace OneHub.Common.WebSockets
                 throw new InvalidOperationException("Cannot read binary data.");
             }
             Data.CopyTo(stream);
-        }
-
-        public void WriteJsonBinary<T>(T obj, Stream binary, JsonSerializerOptions options)
-        {
-            Clear();
-            IsBinary = true;
-            Data.SetLength(4);
-            JsonSerializer.Serialize(_jsonWriter, obj, options);
-
-            var jsonLength = (int)Data.Length - 4;
-            var buffer = Data.GetBuffer();
-            MemoryMarshal.Cast<int, byte>(MemoryMarshal.CreateReadOnlySpan(ref jsonLength, 1)).CopyTo(buffer);
-
-            binary.CopyTo(Data);
-        }
-
-        public T ReadJsonBinary<T>(Stream stream, JsonSerializerOptions options)
-        {
-            if (!IsBinary)
-            {
-                throw new InvalidOperationException("Cannot read mixed json-binary data.");
-            }
-            var buffer = Data.GetBuffer();
-            var jsonLength = BitConverter.ToInt32(buffer, 0);
-            var ret = JsonSerializer.Deserialize<T>(new ReadOnlySpan<byte>(buffer, 4, jsonLength), options);
-            Data.Position = jsonLength + 4;
-            Data.CopyTo(stream);
-            return ret;
         }
 
         public void CopyTo(MessageBuffer messageBuffer)

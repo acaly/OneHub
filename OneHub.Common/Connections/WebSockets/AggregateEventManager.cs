@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections.WebSockets
 {
     internal sealed class AggregateEventManager<T>
     {

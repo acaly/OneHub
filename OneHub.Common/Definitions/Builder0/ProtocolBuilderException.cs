@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     public sealed class ProtocolBuilderException : Exception
     {

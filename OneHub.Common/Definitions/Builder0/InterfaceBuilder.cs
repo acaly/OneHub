@@ -1,4 +1,6 @@
-﻿using OneHub.Common.WebSockets;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     internal static class InterfaceBuilder
     {
@@ -31,8 +33,8 @@ namespace OneHub.Common.Protocols.Builder
 
             var conn = type.DefineField("_connection", typeof(AbstractWebSocketConnection),
                 FieldAttributes.Private | FieldAttributes.InitOnly);
-            var jsonOptions = type.DefineField("_options", typeof(JsonSerializerOptions),
-                FieldAttributes.Private | FieldAttributes.InitOnly);
+            //var jsonOptions = type.DefineField("_options", typeof(JsonSerializerOptions),
+            //    FieldAttributes.Private | FieldAttributes.InitOnly);
             var echoIndex = type.DefineField("_echo", typeof(int), FieldAttributes.Private);
 
             //private string GetEcho()
@@ -104,9 +106,6 @@ namespace OneHub.Common.Protocols.Builder
 
                     il.Emit(OpCodes.Ldarg_1); //p (arg3)
 
-                    il.Emit(OpCodes.Ldarg_0);
-                    il.Emit(OpCodes.Ldfld, jsonOptions); //this._options (arg4)
-
                     il.Emit(OpCodes.Call, helperMethod);
                     il.Emit(OpCodes.Ret);
                 }
@@ -121,7 +120,7 @@ namespace OneHub.Common.Protocols.Builder
                     new[] { typeof(string), typeof(JsonElement).MakeByRefType() });
                 var getStringMethod = typeof(JsonElement).GetMethod(nameof(JsonElement.GetString));
                 var stringEqualsMethod = typeof(string).GetMethod(nameof(string.Equals), new[] { typeof(string) });
-                var readJsonMethod = typeof(MessageBuffer).GetMethod(nameof(MessageBuffer.ReadJson));
+                var deserializeMethod = typeof(MessageSerializer).GetMethod(nameof(MessageSerializer.Deserialize));
 
                 foreach (var interfaceEvent in protocolInfo.Events)
                 {
@@ -206,9 +205,7 @@ namespace OneHub.Common.Protocols.Builder
                         il.Emit(OpCodes.Ldarg_0); //sender
                         {
                             il.Emit(OpCodes.Ldarg_1); //msg
-                            il.Emit(OpCodes.Ldarg_0);
-                            il.Emit(OpCodes.Ldfld, jsonOptions); //options
-                            il.Emit(OpCodes.Call, readJsonMethod.MakeGenericMethod(interfaceEvent.data)); //event data
+                            il.Emit(OpCodes.Call, deserializeMethod.MakeGenericMethod(interfaceEvent.data)); //event data
                         }
                         il.Emit(OpCodes.Call, eventManager.FieldType.GetMethod(nameof(AsyncEventManager<object>.InvokeAsync)));
                         //Pop the Task (we don't want for its completion).
@@ -249,7 +246,7 @@ namespace OneHub.Common.Protocols.Builder
             }
 
             var ctor = type.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis,
-                new[] { typeof(AbstractWebSocketConnection), typeof(JsonSerializerOptions) });
+                new[] { typeof(AbstractWebSocketConnection) });
             {
                 var il = ctor.GetILGenerator();
 
@@ -257,9 +254,6 @@ namespace OneHub.Common.Protocols.Builder
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Stfld, conn);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_2);
-                il.Emit(OpCodes.Stfld, jsonOptions);
                 foreach (var (_, members) in eventMembers)
                 {
                     il.Emit(OpCodes.Ldarg_0);
@@ -279,7 +273,7 @@ namespace OneHub.Common.Protocols.Builder
             }
 
             var runtimeType = type.CreateType();
-            return connection => Activator.CreateInstance(runtimeType, connection, JsonOptions.CreateSerializerOptions());
+            return connection => Activator.CreateInstance(runtimeType, connection);
         }
     }
 }

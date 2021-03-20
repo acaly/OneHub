@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections.WebSockets
 {
     public interface IWebSocketMessageHandler
     {

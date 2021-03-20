@@ -1,4 +1,5 @@
-﻿using OneHub.Common.Protocols.OneHub11.Objects;
+﻿using OneHub.Common.Definitions;
+using OneHub.Common.Protocols.OneHub11.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +8,12 @@ using System.Threading.Tasks;
 
 namespace OneHub.Common.Protocols.OneHub11.API
 {
-    [ProtocolApi(ProtocolVersion.OneHub11)]
+    [OneHub11ApiRequest]
     public sealed class GetGroupInfo
     {
         public string GroupId { get; set; }
 
+        [OneHub11ApiResponse]
         public sealed class Response
         {
             public GroupInfo Group { get; set; }

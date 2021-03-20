@@ -5,15 +5,14 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections.WebSockets
 {
-    public sealed class ServerMessageHandler<T> : AbstractMessageHandler<T> where T : class
+    public sealed class ReplyMessageHandler<T> : AbstractMessageHandler<T> where T : class
     {
         private readonly Func<MessageBuffer, bool> _canHandle;
 
-        public ServerMessageHandler(Func<MessageBuffer, bool> canHandle, Func<ValueTask<T>, ValueTask> task,
-            JsonSerializerOptions options)
-            : base(task, options, () => new ServerMessageHandler<T>(canHandle, task, options))
+        public ReplyMessageHandler(Func<MessageBuffer, bool> canHandle, Func<ValueTask<T>, ValueTask> task)
+            : base(task)
         {
             _canHandle = canHandle;
         }

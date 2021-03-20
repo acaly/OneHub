@@ -1,4 +1,6 @@
-﻿using OneHub.Common.WebSockets;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,12 +12,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     //This is only used by the dynamically generated module.
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class EchoRequestHelper
     {
+        [MessageSerializer(typeof(OneXMessageSerializer<>))]
         private class ActualRequest<T> where T : class
         {
             [JsonConverter(typeof(JsonOptions.StringPropertyConverter))]
@@ -24,6 +27,7 @@ namespace OneHub.Common.Protocols.Builder
             public T Params { get; init; }
         }
 
+        [MessageSerializer(typeof(OneXMessageSerializer<>))]
         private class BinaryMixedActualRequest<T> : ActualRequest<T>, IBinaryMixedObject where T : class
         {
             MemoryStream IBinaryMixedObject.Stream
@@ -33,6 +37,7 @@ namespace OneHub.Common.Protocols.Builder
             }
         }
 
+        [MessageSerializer(typeof(OneXMessageSerializer<>))]
         private class ActualResponse<T> where T : class
         {
             public string Status { get; init; }
@@ -41,6 +46,7 @@ namespace OneHub.Common.Protocols.Builder
             public T Data { get; init; }
         }
 
+        [MessageSerializer(typeof(OneXMessageSerializer<>))]
         private class BinaryMixedActualResponse<T> : ActualResponse<T>, IBinaryMixedObject where T : class
         {
             MemoryStream IBinaryMixedObject.Stream
@@ -50,8 +56,8 @@ namespace OneHub.Common.Protocols.Builder
             }
         }
 
-        internal static Func<T, MessageBuffer, Task> MakeResponseHandler<T>(MethodInfo method, Type request, Type response,
-            JsonSerializerOptions options) where T : class
+        internal static Func<T, MessageBuffer, Task> MakeResponseHandler<T>(MethodInfo method, Type request, Type response)
+            where T : class
         {
             var funcType = typeof(Func<,,>).MakeGenericType(typeof(T), request, typeof(Task<>).MakeGenericType(response));
             var func = Delegate.CreateDelegate(funcType, method, throwOnBindFailure: false);
@@ -61,12 +67,12 @@ namespace OneHub.Common.Protocols.Builder
             }
             var makerG = typeof(EchoRequestHelper).GetMethod(nameof(MakeHandlerFunc), BindingFlags.NonPublic | BindingFlags.Static);
             var maker = makerG.MakeGenericMethod(typeof(T), request, response);
-            var ret = maker.Invoke(null, new object[] { func, options });
+            var ret = maker.Invoke(null, new object[] { func });
             return (Func<T, MessageBuffer, Task>)ret;
         }
 
         private static Func<TThis, MessageBuffer, Task> MakeHandlerFunc<TThis, TRequest, TResponse>(
-            Func<TThis, TRequest, Task<TResponse>> func, JsonSerializerOptions options)
+            Func<TThis, TRequest, Task<TResponse>> func)
             where TThis : class
             where TRequest : class
             where TResponse : class
@@ -80,15 +86,13 @@ namespace OneHub.Common.Protocols.Builder
                     TRequest request;
                     if (IBinaryMixedObject.Helper<TRequest>.IsBinaryMixed)
                     {
-                        var stream = new MemoryStream();
-                        var actualRequest = msgBuffer.ReadJsonBinary<ActualRequest<TRequest>>(stream, options);
+                        var actualRequest = MessageSerializer.Deserialize<BinaryMixedActualRequest<TRequest>>(msgBuffer);
                         request = actualRequest.Params;
                         echo = actualRequest.Echo;
-                        ((IBinaryMixedObject)request).Stream = stream;
                     }
                     else
                     {
-                        var actualRequest = msgBuffer.ReadJson<ActualRequest<TRequest>>(options);
+                        var actualRequest = MessageSerializer.Deserialize<ActualRequest<TRequest>>(msgBuffer);
                         request = actualRequest.Params;
                         echo = actualRequest.Echo;
                     }
@@ -99,13 +103,13 @@ namespace OneHub.Common.Protocols.Builder
                     //TODO log
 
                     //Reuse the msgBuffer.
-                    msgBuffer.WriteJson(new ActualResponse<TResponse>()
+                    MessageSerializer.Serialize(msgBuffer, new ActualResponse<TResponse>()
                     {
                         Data = default,
                         Retcode = 1,
                         Status = "failed",
                         Echo = echo,
-                    }, options);
+                    });
                     await msgBuffer.Owner.SendMessageAsync(msgBuffer);
                     return;
                 }
@@ -113,30 +117,30 @@ namespace OneHub.Common.Protocols.Builder
                 //Reuse the msgBuffer.
                 if (IBinaryMixedObject.Helper<TResponse>.IsBinaryMixed)
                 {
-                    msgBuffer.WriteJsonBinary(new BinaryMixedActualResponse<TResponse>()
+                    MessageSerializer.Serialize(msgBuffer, new BinaryMixedActualResponse<TResponse>()
                     {
                         Data = response,
                         Retcode = 0,
                         Echo = echo,
                         Status = "ok",
-                    }, ((IBinaryMixedObject)response).Stream, options);
+                    });
                 }
                 else
                 {
-                    msgBuffer.WriteJson(new ActualResponse<TResponse>()
+                    MessageSerializer.Serialize(msgBuffer, new ActualResponse<TResponse>()
                     {
                         Data = response,
                         Retcode = 0,
                         Echo = echo,
                         Status = "ok",
-                    }, options);
+                    });
                 }
                 await msgBuffer.Owner.SendMessageAsync(msgBuffer);
             };
         }
 
-        internal static Action<ImplBuilder.V11ProtocolImplMessageHandler<T>, T> MakeEventSubscription<T, TEvent>(EventInfo eventInfo,
-            JsonSerializerOptions options) where T : class
+        internal static Action<ImplBuilder.V11ProtocolImplMessageHandler<T>, T> MakeEventSubscription<T, TEvent>(EventInfo eventInfo)
+            where T : class
         {
             var subscribeFunc = (Action<T, AsyncEventHandler<TEvent>>)Delegate.CreateDelegate(typeof(Action<T, AsyncEventHandler<TEvent>>),
                 eventInfo.AddMethod, throwOnBindFailure: false);
@@ -151,7 +155,7 @@ namespace OneHub.Common.Protocols.Builder
                 {
                     //Send to msgHandler
                     var connection = msgHandler.Connection;
-                    return connection.SendJsonMessageAsync(e, options);
+                    return connection.SendJsonMessageAsync(e);
                 };
 
                 //Subscribe the event
@@ -161,7 +165,7 @@ namespace OneHub.Common.Protocols.Builder
 
         //This is used by the generated methods, so has to be public.
         public static async Task<TResponse> SendRequestWithEchoAsync<TRequest, TResponse>(AbstractWebSocketConnection conn,
-            string action, string echo, TRequest p, JsonSerializerOptions options)
+            string action, string echo, TRequest p)
             where TRequest : class
             where TResponse : class
         {
@@ -198,7 +202,7 @@ namespace OneHub.Common.Protocols.Builder
                     {
                         taskSource.SetException(e);
                     }
-                }, options));
+                }));
             }
             if (typeof(IBinaryMixedObject).IsAssignableFrom(typeof(TResponse)))
             {
@@ -217,7 +221,7 @@ namespace OneHub.Common.Protocols.Builder
                     Action = action,
                     Params = p,
                     Echo = echo,
-                }, options);
+                });
             }
             if (typeof(IBinaryMixedObject).IsAssignableFrom(typeof(TRequest)))
             {

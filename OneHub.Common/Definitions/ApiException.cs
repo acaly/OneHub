@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols
+namespace OneHub.Common.Definitions
 {
     public class ApiException : Exception
     {

@@ -1,4 +1,6 @@
-﻿using OneHub.Common.Protocols.OneHub11.Objects;
+﻿using OneHub.Common.Definitions;
+using OneHub.Common.Protocols.OneHub11.Objects;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,7 @@ namespace OneHub.Common.Protocols.OneHub11.Events
         Deleted = 3,
     }
 
-    [ProtocolEvent(ProtocolVersion.OneHub11)]
+    [OneHub11Event]
     public sealed class MessageReceived
     {
         [EventId]

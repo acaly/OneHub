@@ -5,10 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols
+namespace OneHub.Common.Definitions.Builder0
 {
-    public delegate Task AsyncEventHandler<TEventArgs>(object sender, TEventArgs eventArgs);
-
     //TODO currently InterfaceBuilder uses this class for its events, but the returned Task is not awaitted.
     //We may need to log the error at the end instead of throwing it (no one will catch it).
     public class AsyncEventManager<T>

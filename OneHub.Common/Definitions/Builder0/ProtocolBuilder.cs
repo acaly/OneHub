@@ -1,4 +1,6 @@
-﻿using OneHub.Common.WebSockets;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -11,7 +13,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Builder
+namespace OneHub.Common.Definitions.Builder0
 {
     public static class ProtocolBuilder
     {
@@ -42,15 +44,15 @@ namespace OneHub.Common.Protocols.Builder
             }
         }
 
-        private static readonly Dictionary<ProtocolVersion, ProtocolInfo> _protocols = new();
-        private static readonly Dictionary<(ProtocolVersion, Type), Func<object, IMessageHandler>> _wsImpl = new();
-        private static readonly Dictionary<(ProtocolVersion, Type), Func<AbstractWebSocketConnection, object>> _wsInterface = new();
+        private static readonly Dictionary<Type, ProtocolInfo> _protocols = new();
+        private static readonly Dictionary<Type, Func<object, IMessageHandler>> _wsImpl = new();
+        private static readonly Dictionary<Type, Func<AbstractWebSocketConnection, object>> _wsInterface = new();
 
-        private static ProtocolInfo GetProtocolInfo(ProtocolVersion protocol)
+        private static ProtocolInfo GetProtocolInfo(Type protocolType)
         {
             lock (_protocols)
             {
-                if (!_protocols.TryGetValue(protocol, out var ret))
+                if (!_protocols.TryGetValue(protocolType, out var ret))
                 {
                     List<(string name, Type request, Type response)> apis = new();
                     List<(string name, Type data, ImmutableArray<(string key, string value)> ids)> events = new();
@@ -58,7 +60,7 @@ namespace OneHub.Common.Protocols.Builder
 
                     foreach (var t in Assembly.GetExecutingAssembly().GetTypes())
                     {
-                        if (t.GetCustomAttribute<ProtocolApiAttribute>()?.ProtocolVersion == protocol)
+                        if (t.GetCustomAttributes().OfType<ProtocolApiRequestAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
                         {
                             var responseType = t.GetNestedType("Response");
                             if (responseType is null)
@@ -67,7 +69,7 @@ namespace OneHub.Common.Protocols.Builder
                             }
                             apis.Add((t.Name, t, responseType));
                         }
-                        if (t.GetCustomAttribute<ProtocolEventAttribute>()?.ProtocolVersion == protocol)
+                        if (t.GetCustomAttributes().OfType<ProtocolEventAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
                         {
                             if (typeof(IBinaryMixedObject).IsAssignableFrom(t))
                             {
@@ -87,7 +89,7 @@ namespace OneHub.Common.Protocols.Builder
                         Events = events.ToImmutableArray(),
                     };
                     CheckProtocol(ret);
-                    _protocols.Add(protocol, ret);
+                    _protocols.Add(protocolType, ret);
                 }
                 return ret;
             }
@@ -147,25 +149,27 @@ namespace OneHub.Common.Protocols.Builder
         //Note that this will add a ServerMessageHandler (although being the client) to handle events from server.
         //Currently this handler cannot be removed. This is the issue from the implementation of AbstractWebSocketConnection
         //which does not support cancelling an added handler.
-        public static T BuildWebSocketInterface<T>(ProtocolVersion protocol, AbstractWebSocketConnection connection)
+        public static T BuildWebSocketInterface<T>(AbstractWebSocketConnection connection)
             where T : class
         {
-            if (!_wsInterface.TryGetValue((protocol, typeof(T)), out var factory))
+            if (!_wsInterface.TryGetValue(typeof(T), out var factory))
             {
-                factory = InterfaceBuilder.BuildWebSocketInterfaceFactory(typeof(T), GetProtocolInfo(protocol));
-                _wsInterface[(protocol, typeof(T))] = factory;
+                factory = InterfaceBuilder.BuildWebSocketInterfaceFactory(typeof(T), GetProtocolInfo(typeof(T)));
+                _wsInterface[typeof(T)] = factory;
             }
             return (T)factory(connection);
         }
 
-        public static IMessageHandler BuildWebSocketImpl<T>(ProtocolVersion protocol, T obj) where T : class
+        public static IMessageHandler BuildWebSocketImpl<TInterface, TImpl>(TImpl obj)
+            where TInterface : class
+            where TImpl : class, TInterface
         {
             lock (_wsImpl)
             {
-                if (!_wsImpl.TryGetValue((protocol, typeof(T)), out var p))
+                if (!_wsImpl.TryGetValue(typeof(TImpl), out var p))
                 {
-                    p = ImplBuilder.BuildWebSocketImplFactory<T>(GetProtocolInfo(protocol));
-                    _wsImpl[(protocol, typeof(T))] = p;
+                    p = ImplBuilder.BuildWebSocketImplFactory<TImpl>(GetProtocolInfo(typeof(TInterface)));
+                    _wsImpl[typeof(TImpl)] = p;
                 }
                 return p(obj);
             }

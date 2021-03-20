@@ -1,33 +1,25 @@
-﻿using System;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Connections.WebSockets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Definitions.Builder0
 {
-    public sealed class ReplyMessageHandler<T> : AbstractMessageHandler<T> where T : class
+    public static class WebSocketConnectionJsonExtensions
     {
-        private readonly Func<MessageBuffer, bool> _canHandle;
-
-        public ReplyMessageHandler(Func<MessageBuffer, bool> canHandle, Func<ValueTask<T>, ValueTask> task,
-            JsonSerializerOptions options)
-            : base(task, options)
+        public static Task SendJsonMessageAsync<T>(this AbstractWebSocketConnection connection, T data)
         {
-            _canHandle = canHandle;
+            var msg = connection.CreateMessageBuffer();
+            MessageSerializer.Serialize(msg, data);
+            return connection.SendMessageAsync(msg);
         }
 
-        public override bool CanHandle(MessageBuffer message)
-        {
-            return _canHandle(message);
-        }
-    }
-
-    public static class WebSocketConnectionReplyMessageExtensions
-    {
         public static async Task<TReply> SendJsonMessageAsync<TMessage, TReply>(this AbstractWebSocketConnection connection,
-            TMessage message, Func<MessageBuffer, bool> filter, JsonSerializerOptions options)
+            TMessage message, Func<MessageBuffer, bool> filter)
             where TMessage : class
             where TReply : class
         {
@@ -43,8 +35,8 @@ namespace OneHub.Common.WebSockets
                 {
                     taskSource.SetException(e);
                 }
-            }, options));
-            await connection.SendJsonMessageAsync(message, options);
+            }));
+            await connection.SendJsonMessageAsync(message);
             return await taskSource.Task;
         }
     }

@@ -7,11 +7,13 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols
+namespace OneHub.Common.Protocols.OneX
 {
-    public static class JsonOptions
+    internal static class JsonOptions
     {
-        public static JsonSerializerOptions CreateSerializerOptions() => new()
+        public static readonly JsonSerializerOptions Options = CreateSerializerOptions();
+
+        private static JsonSerializerOptions CreateSerializerOptions() => new()
         {
             PropertyNamingPolicy = new NamingPolicy(),
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

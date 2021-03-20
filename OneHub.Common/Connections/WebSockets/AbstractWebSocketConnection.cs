@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.WebSockets
+namespace OneHub.Common.Connections.WebSockets
 {
     public sealed class UnhandledMessageEventArgs
     {
@@ -388,21 +388,6 @@ namespace OneHub.Common.WebSockets
         {
             var wsContext = await httpListenerContext.AcceptWebSocketAsync(null);
             return Create(wsContext.WebSocket);
-        }
-    }
-
-    public static class WebSocketConnectionJsonExtensions
-    {
-        public static Task SendJsonMessageAsync<T>(this AbstractWebSocketConnection connection, T data,
-            JsonSerializerOptions options)
-        {
-            var msg = connection.CreateMessageBuffer();
-            if (IBinaryMixedObject.Helper<T>.IsBinaryMixed)
-            {
-                msg.WriteJsonBinary<T>(data, ((IBinaryMixedObject)data).Stream, options);
-            }
-            msg.WriteJson(data, options);
-            return connection.SendMessageAsync(msg);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using OneHub.Common.Protocols.OneHub11.Objects;
+﻿using OneHub.Common.Definitions;
+using OneHub.Common.Protocols.OneHub11.Objects;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,13 +27,14 @@ namespace OneHub.Common.Protocols.OneHub11.API
         Max,
     }
 
-    [ProtocolApi(ProtocolVersion.OneHub11)]
+    [OneHub11ApiRequest]
     public sealed class GetMsg
     {
         public string MessageId { get; set; }
         public RequestContentType RequestContent { get; set; }
         public RequestChildrenType RequestChildren { get; set; }
 
+        [OneHub11ApiResponse]
         public sealed class Response
         {
             public MessageInfo Message { get; set; }
