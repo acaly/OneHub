@@ -164,11 +164,12 @@ namespace OneHub.Common.Definitions
             return ret;
         }
 
-        //Note that this method is moved from event recv. Need to check for request recv.
-        private static MethodInfo EmitRecvEntry(TypeBuilder type, SingleIdCheckResult sid, CodeGenFieldInitLists fieldInitLists,
-            OnMessageMethodList handlerMethods, out FieldBuilder dispatchMethodListField)
+        private static MethodInfo EmitRecvEntry(TypeBuilder type, SingleIdCheckResult sid,
+            CodeGenFieldInitLists fieldInitLists,OnMessageMethodList handlerMethods,
+            out FieldBuilder dispatchMethodListField)
         {
-            var ret = type.DefineMethod("OnMessage", MethodAttributes.Private, typeof(void), new[] { typeof(MessageBuffer) });
+            var ret = type.DefineMethod("OnMessage", MethodAttributes.Private,
+                typeof(void), new[] { typeof(MessageBuffer) });
             {
                 var il = ret.GetILGenerator();
                 var ilEnv = new ILGeneratorEnv(type, il, fieldInitLists);
@@ -179,17 +180,18 @@ namespace OneHub.Common.Definitions
                     dispatchMethodListField = type.DefineField("_sys_recvMethods", typeof(Func<MessageBuffer, Task>[]),
                         FieldAttributes.Private | FieldAttributes.InitOnly);
 
+                    var retLabel = il.DefineLabel();
+
                     //if (!msgBuffer.ToJsonDocument().TryGetNestedProperty(key, out var value)) return;
                     var singleDispatchJsonValueField = il.DeclareLocal(typeof(string));
                     il.Emit(OpCodes.Ldarg_1);
-                    il.Emit(OpCodes.Call, typeof(MessageBuffer).GetMethod(nameof(MessageBuffer.ToJsonDocument)));
+                    il.Emit(OpCodes.Call, typeof(MessageBuffer)
+                        .GetMethod(nameof(MessageBuffer.ToJsonDocument)));
                     il.Emit(OpCodes.Ldstr, sid.Key);
                     il.Emit(OpCodes.Ldloca, singleDispatchJsonValueField);
-                    il.Emit(OpCodes.Call, typeof(DispatchKeyHelper).GetMethod(nameof(DispatchKeyHelper.TryGetNestedProperty)));
-                    var contLabel = il.DefineLabel();
-                    il.Emit(OpCodes.Brtrue, contLabel);
-                    il.Emit(OpCodes.Ret);
-                    il.MarkLabel(contLabel);
+                    il.Emit(OpCodes.Call, typeof(DispatchKeyHelper)
+                        .GetMethod(nameof(DispatchKeyHelper.TryGetNestedProperty)));
+                    il.Emit(OpCodes.Brfalse, retLabel);
 
                     var lookupArray = handlerMethods.Select(m => m.val).ToArray();
                     var lookupArrayField = ilEnv.AddReadOnlyField("_sys_recvLookup", lookupArray);
@@ -204,7 +206,6 @@ namespace OneHub.Common.Definitions
                     il.Emit(OpCodes.Stloc, indexLocal);
 
                     //Check not found (-1).
-                    var retLabel = il.DefineLabel();
                     il.Emit(OpCodes.Ldloc, indexLocal);
                     il.Emit(OpCodes.Ldc_I4_M1);
                     il.Emit(OpCodes.Beq, retLabel);
@@ -217,7 +218,12 @@ namespace OneHub.Common.Definitions
                     il.Emit(OpCodes.Call, typeof(Func<MessageBuffer, Task>).GetMethod("Invoke"));
                     il.Emit(OpCodes.Pop); //Dicard the Task.
 
+                    il.Emit(OpCodes.Ret);
+
                     il.MarkLabel(retLabel);
+                    //If none can handle it, we need to dispose the message buffer.
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Call, typeof(MessageBuffer).GetMethod(nameof(MessageBuffer.Dispose)));
                     il.Emit(OpCodes.Ret);
                 }
                 else
@@ -233,6 +239,11 @@ namespace OneHub.Common.Definitions
                         il.Emit(OpCodes.Call, method);
                         il.Emit(OpCodes.Brtrue, retLabel);
                     }
+
+                    //If none can handle it, we need to dispose the message buffer.
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Call, typeof(MessageBuffer).GetMethod(nameof(MessageBuffer.Dispose)));
+
                     il.MarkLabel(retLabel);
                     il.Emit(OpCodes.Ret);
                 }
