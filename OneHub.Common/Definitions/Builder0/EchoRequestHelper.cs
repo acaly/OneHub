@@ -155,7 +155,9 @@ namespace OneHub.Common.Definitions.Builder0
                 {
                     //Send to msgHandler
                     var connection = msgHandler.Connection;
-                    return connection.SendJsonMessageAsync(e);
+                    var msg = connection.CreateMessageBuffer();
+                    MessageSerializer.Serialize(msg, e);
+                    return connection.SendMessageAsync(msg);
                 };
 
                 //Subscribe the event
@@ -216,12 +218,14 @@ namespace OneHub.Common.Definitions.Builder0
             //2. Send request.
             Task SendRequestAsync<T>() where T : ActualRequest<TRequest>
             {
-                return conn.SendJsonMessageAsync(new ActualRequest<TRequest>()
+                var msg = conn.CreateMessageBuffer();
+                MessageSerializer.Serialize(msg, new ActualRequest<TRequest>()
                 {
                     Action = action,
                     Params = p,
                     Echo = echo,
                 });
+                return conn.SendMessageAsync(msg);
             }
             if (typeof(IBinaryMixedObject).IsAssignableFrom(typeof(TRequest)))
             {

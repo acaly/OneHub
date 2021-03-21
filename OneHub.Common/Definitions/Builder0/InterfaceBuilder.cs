@@ -18,7 +18,7 @@ namespace OneHub.Common.Definitions.Builder0
 
         static InterfaceBuilder()
         {
-            var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("OneHub.DynamicAssembly"),
+            var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("OneHub.DynamicAssembly0"),
                     AssemblyBuilderAccess.Run);
             _dynamicModule = assembly.DefineDynamicModule(assembly.GetName().Name);
         }

@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace OneHub.Common.Connections.WebSockets
 {
+    [Obsolete("Move to each protocol's namespace")]
     public sealed class ReplyMessageHandler<T> : AbstractMessageHandler<T> where T : class
     {
         private readonly Func<MessageBuffer, bool> _canHandle;

@@ -60,16 +60,17 @@ namespace OneHub.Common.Definitions.Builder0
 
                     foreach (var t in Assembly.GetExecutingAssembly().GetTypes())
                     {
-                        if (t.GetCustomAttributes().OfType<ProtocolApiRequestAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
+                        if (t.GetCustomAttributes().OfType<IProtocolApiRequestAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
                         {
                             var responseType = t.GetNestedType("Response");
+                            //TODO check response attribute
                             if (responseType is null)
                             {
                                 throw new ProtocolBuilderException($"Api definition {t} does not have a response type.");
                             }
                             apis.Add((t.Name, t, responseType));
                         }
-                        if (t.GetCustomAttributes().OfType<ProtocolEventAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
+                        if (t.GetCustomAttributes().OfType<IProtocolEventAttribute>().SingleOrDefault()?.ProtocolType == protocolType)
                         {
                             if (typeof(IBinaryMixedObject).IsAssignableFrom(t))
                             {

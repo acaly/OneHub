@@ -27,7 +27,7 @@ namespace OneHub.Common.Connections
 
         private static object CreateSerializer(Type t)
         {
-            var s = t.GetCustomAttribute<MessageSerializerAttribute>()?.SerializerType;
+            var s = t.GetCustomAttributes().OfType<MessageSerializerAttribute>().SingleOrDefault()?.SerializerType;
             if (s.IsGenericTypeDefinition)
             {
                 s = s.MakeGenericType(t);

@@ -1,4 +1,5 @@
-﻿using OneHub.Common.Definitions;
+﻿using OneHub.Common.Connections;
+using OneHub.Common.Definitions;
 using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
@@ -9,25 +10,34 @@ using System.Threading.Tasks;
 namespace OneHub.Common.Protocols.OneHub11
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11ApiRequestAttribute : ProtocolApiRequestAttribute
+    public sealed class OneHub11ApiRequestAttribute : MessageSerializerAttribute, IProtocolApiRequestAttribute
     {
-        public OneHub11ApiRequestAttribute() : base(typeof(IOneHub11), typeof(OneXMessageSerializer<>))
+        public Type ProtocolType => typeof(IOneHub11);
+        public Type DispatcherType => typeof(OneXRequestDispatcher);
+
+        public OneHub11ApiRequestAttribute() : base(typeof(OneXMessageSerializer<>))
+        {
+        }
+
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public sealed class OneHub11ApiResponseAttribute : MessageSerializerAttribute, IProtocolApiResponseAttribute
+    {
+        public Type ProtocolType => typeof(IOneHub11);
+
+        public OneHub11ApiResponseAttribute() : base(typeof(OneXMessageSerializer<>))
         {
         }
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11ApiResponseAttribute : ProtocolApiResponseAttribute
+    public sealed class OneHub11EventAttribute : MessageSerializerAttribute, IProtocolEventAttribute
     {
-        public OneHub11ApiResponseAttribute() : base(typeof(IOneHub11), typeof(OneXMessageSerializer<>))
-        {
-        }
-    }
+        public Type ProtocolType => typeof(IOneHub11);
+        public Type DispatcherType => typeof(OneXEventDispatcher);
 
-    [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11EventAttribute : ProtocolEventAttribute
-    {
-        public OneHub11EventAttribute() : base(typeof(IOneHub11), typeof(OneXMessageSerializer<>))
+        public OneHub11EventAttribute() : base(typeof(OneXMessageSerializer<>))
         {
         }
     }

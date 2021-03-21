@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Definitions.Builder0
+namespace OneHub.Common.Definitions
 {
     //TODO currently InterfaceBuilder uses this class for its events, but the returned Task is not awaitted.
     //We may need to log the error at the end instead of throwing it (no one will catch it).
+    //See event dispatcher's HandleRecv method (for example, in OneXEventDispatcher).
     public class AsyncEventManager<T>
     {
         private class DelegateWithInvocationList

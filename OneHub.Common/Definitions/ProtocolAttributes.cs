@@ -7,36 +7,21 @@ using System.Threading.Tasks;
 
 namespace OneHub.Common.Definitions
 {
-    [AttributeUsage(AttributeTargets.Class)]
-    public class ProtocolApiRequestAttribute : MessageSerializerAttribute
+    public interface IProtocolApiRequestAttribute
     {
-        public Type ProtocolType { get; }
-
-        public ProtocolApiRequestAttribute(Type protocolType, Type serializerType) : base(serializerType)
-        {
-            ProtocolType = protocolType;
-        }
+        Type ProtocolType { get; }
+        Type DispatcherType { get; }
     }
 
-    [AttributeUsage(AttributeTargets.Class)]
-    public class ProtocolApiResponseAttribute : MessageSerializerAttribute
+    //This is actually never used.
+    public interface IProtocolApiResponseAttribute
     {
-        public Type ProtocolType { get; }
-
-        public ProtocolApiResponseAttribute(Type protocolType, Type serializerType) : base(serializerType)
-        {
-            ProtocolType = protocolType;
-        }
+        Type ProtocolType { get; }
     }
 
-    [AttributeUsage(AttributeTargets.Class)]
-    public class ProtocolEventAttribute : MessageSerializerAttribute
+    public interface IProtocolEventAttribute
     {
-        public Type ProtocolType { get; }
-
-        public ProtocolEventAttribute(Type protocolType, Type serializerType) : base(serializerType)
-        {
-            ProtocolType = protocolType;
-        }
+        Type ProtocolType { get; }
+        Type DispatcherType { get; }
     }
 }

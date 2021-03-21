@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -122,11 +121,19 @@ namespace OneHub.Common.Connections.WebSockets
 
             ret.Clear();
 
-            //Try reading with MS's buffer.
+            //Try reading into MS's buffer (avoids a copy step).
             if (ret.Data.Capacity != 0)
             {
                 var underlyingBuffer = ret.Data.GetBuffer();
-                received = await ReceiveBufferAsync(underlyingBuffer, _connectionStop.Token);
+
+                //If we first read and then SetLength, the extended part will be zeroed.
+                //We need to first SetLength.
+                var underlyingBufferLen = underlyingBuffer.Length - 1; //Make it safer?
+                ret.Data.SetLength(underlyingBufferLen);
+                underlyingBuffer = ret.Data.GetBuffer(); //In case it reallocates.
+                var underlyingBufferMemory = new Memory<byte>(underlyingBuffer, 0, underlyingBufferLen);
+
+                received = await ReceiveBufferAsync(underlyingBufferMemory, _connectionStop.Token);
                 if (received.MessageType == WebSocketMessageType.Close)
                 {
                     ReturnMessageBuffer(ret);
