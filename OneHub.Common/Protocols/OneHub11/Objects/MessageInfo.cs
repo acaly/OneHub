@@ -1,5 +1,5 @@
-﻿using OneHub.Common.Protocols.Messages;
-using OneHub.Common.Protocols.OneX;
+﻿using OneHub.Common.Protocols.OneX;
+using OneHub.Common.Protocols.OneX.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;

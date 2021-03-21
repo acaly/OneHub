@@ -11,7 +11,7 @@ namespace OneHub.Common.Protocols.OneX
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class EventIdAttribute : JsonConverterAttribute
     {
-        public EventIdAttribute() : base(typeof(JsonOptions.StringPropertyConverter))
+        public EventIdAttribute() : base(typeof(JsonOptions.ReadOnlyStringPropertyConverter))
         {
         }
     }

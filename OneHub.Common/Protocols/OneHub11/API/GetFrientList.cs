@@ -11,7 +11,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     [OneHub11ApiRequest]
     public sealed class GetFrientList
     {
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public List<UserInfo> Friends { get; set; }

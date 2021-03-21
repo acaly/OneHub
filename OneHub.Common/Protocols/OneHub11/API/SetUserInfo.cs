@@ -13,7 +13,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     {
         public UserInfo User { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
         }

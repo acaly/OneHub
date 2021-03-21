@@ -1,6 +1,9 @@
-﻿using System;
+﻿using OneHub.Common.Connections;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,7 +35,7 @@ namespace OneHub.Common.Protocols.OneX
             return Regex.Replace(str, "(.)([A-Z][a-z])", "$1_$2").ToLower();
         }
 
-        internal sealed class StringPropertyConverter : JsonConverter<string>
+        internal sealed class ReadOnlyStringPropertyConverter : JsonConverter<string>
         {
             public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
@@ -43,6 +46,29 @@ namespace OneHub.Common.Protocols.OneX
             public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
             {
                 JsonSerializer.Serialize(writer, ConvertString(value), options);
+            }
+        }
+
+        internal sealed class TextMessageSerializer<T> : MessageSerializer<T>
+        {
+            public TextMessageSerializer() : base(JsonOptions.Options)
+            {
+            }
+        }
+
+        internal sealed class BinaryMessageSerializer<T> : IMessageSerializer<T>
+        {
+            public void Serialize(MessageBuffer messageBuffer, T obj)
+            {
+                OneXBinaryDecoder.WriteJsonBinary<T>(messageBuffer, obj, ((IBinaryMixedObject)obj).Stream);
+            }
+
+            public T Deserialize(MessageBuffer messageBuffer)
+            {
+                var stream = new MemoryStream();
+                var ret = OneXBinaryDecoder.ReadJsonBinary<T>(messageBuffer, stream, JsonOptions.Options);
+                ((IBinaryMixedObject)ret).Stream = stream;
+                return ret;
             }
         }
     }

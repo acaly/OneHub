@@ -15,6 +15,11 @@ namespace OneHub.Common.Protocols.OneX
 {
     internal sealed class OneXRequestDispatcher : IMessageDispatcher
     {
+        internal class Helper<T>
+        {
+            public static bool IsBinaryMixed { get; } = typeof(IBinaryMixedObject).IsAssignableFrom(typeof(T));
+        }
+
         public bool TryGetSingleDispatchId(Type type, out (string key, string value) val)
         {
             val = ("action", JsonOptions.ConvertString(type.Name));
@@ -70,7 +75,7 @@ namespace OneHub.Common.Protocols.OneX
             {
                 //TODO handle deserialize exception?
                 ActualRequest<TRequest> actualRequest;
-                if (IBinaryMixedObject.Helper<TRequest>.IsBinaryMixed)
+                if (Helper<TRequest>.IsBinaryMixed)
                 {
                     actualRequest = MessageSerializer.Deserialize<BinaryMixedActualRequest<TRequest>>(msgBuffer);
                 }
@@ -83,7 +88,7 @@ namespace OneHub.Common.Protocols.OneX
                 try
                 {
                     var response = await apiMethod(protocol, request);
-                    if (IBinaryMixedObject.Helper<TResponse>.IsBinaryMixed)
+                    if (Helper<TResponse>.IsBinaryMixed)
                     {
                         MessageSerializer.Serialize(msgBuffer, new BinaryMixedActualResponse<TResponse>(echo, response));
                     }
@@ -236,16 +241,16 @@ namespace OneHub.Common.Protocols.OneX
             }
         }
 
-        [MessageSerializer(typeof(OneXMessageSerializer<>))]
+        [MessageSerializer(typeof(JsonOptions.TextMessageSerializer<>))]
         private class ActualRequest<T> where T : class
         {
-            [JsonConverter(typeof(JsonOptions.StringPropertyConverter))]
+            [JsonConverter(typeof(JsonOptions.ReadOnlyStringPropertyConverter))]
             public string Action { get; init; }
             public string Echo { get; init; }
             public T Params { get; init; }
         }
 
-        [MessageSerializer(typeof(OneXMessageSerializer<>))]
+        [MessageSerializer(typeof(JsonOptions.BinaryMessageSerializer<>))]
         private class BinaryMixedActualRequest<T> : ActualRequest<T>, IBinaryMixedObject where T : class
         {
             MemoryStream IBinaryMixedObject.Stream
@@ -255,7 +260,7 @@ namespace OneHub.Common.Protocols.OneX
             }
         }
 
-        [MessageSerializer(typeof(OneXMessageSerializer<>))]
+        [MessageSerializer(typeof(JsonOptions.TextMessageSerializer<>))]
         private class ActualResponse<T> where T : class
         {
             public string Status { get; init; }
@@ -280,10 +285,15 @@ namespace OneHub.Common.Protocols.OneX
                 Retcode = -1;
                 Echo = echo;
                 Data = null;
+
+                if (e is ApiException apiException)
+                {
+                    Retcode = apiException.Code;
+                }
             }
         }
 
-        [MessageSerializer(typeof(OneXMessageSerializer<>))]
+        [MessageSerializer(typeof(JsonOptions.BinaryMessageSerializer<>))]
         private class BinaryMixedActualResponse<T> : ActualResponse<T>, IBinaryMixedObject where T : class
         {
             MemoryStream IBinaryMixedObject.Stream

@@ -13,12 +13,6 @@ namespace OneHub.Common.Definitions
         Type DispatcherType { get; }
     }
 
-    //This is actually never used.
-    public interface IProtocolApiResponseAttribute
-    {
-        Type ProtocolType { get; }
-    }
-
     public interface IProtocolEventAttribute
     {
         Type ProtocolType { get; }

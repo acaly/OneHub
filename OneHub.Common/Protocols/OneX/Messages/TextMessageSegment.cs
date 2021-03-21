@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Messages
+namespace OneHub.Common.Protocols.OneX.Messages
 {
     public sealed class TextMessageSegment : AbstractMessageSegment
     {

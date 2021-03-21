@@ -15,7 +15,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
         public List<string> ChannelIds { get; set; }
         public bool IncludePrivateChannels { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
         }

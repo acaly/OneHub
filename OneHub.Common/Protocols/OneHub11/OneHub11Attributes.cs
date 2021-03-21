@@ -10,34 +10,18 @@ using System.Threading.Tasks;
 namespace OneHub.Common.Protocols.OneHub11
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11ApiRequestAttribute : MessageSerializerAttribute, IProtocolApiRequestAttribute
+    public sealed class OneHub11ApiRequestAttribute : OneXApiRequestAttribute
     {
-        public Type ProtocolType => typeof(IOneHub11);
-        public Type DispatcherType => typeof(OneXRequestDispatcher);
-
-        public OneHub11ApiRequestAttribute() : base(typeof(OneXMessageSerializer<>))
+        public OneHub11ApiRequestAttribute() : base(typeof(IOneHub11))
         {
         }
 
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11ApiResponseAttribute : MessageSerializerAttribute, IProtocolApiResponseAttribute
+    public sealed class OneHub11EventAttribute : OneXEventAttribute
     {
-        public Type ProtocolType => typeof(IOneHub11);
-
-        public OneHub11ApiResponseAttribute() : base(typeof(OneXMessageSerializer<>))
-        {
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Class)]
-    public sealed class OneHub11EventAttribute : MessageSerializerAttribute, IProtocolEventAttribute
-    {
-        public Type ProtocolType => typeof(IOneHub11);
-        public Type DispatcherType => typeof(OneXEventDispatcher);
-
-        public OneHub11EventAttribute() : base(typeof(OneXMessageSerializer<>))
+        public OneHub11EventAttribute() : base(typeof(IOneHub11))
         {
         }
     }

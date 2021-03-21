@@ -10,7 +10,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     [OneHub11ApiRequest]
     public sealed class GetVersionInfo
     {
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public string AppName { get; set; }

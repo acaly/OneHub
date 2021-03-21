@@ -1,5 +1,5 @@
-﻿using OneHub.Common.Protocols.Messages;
-using OneHub.Common.Protocols.OneX;
+﻿using OneHub.Common.Protocols.OneX;
+using OneHub.Common.Protocols.OneX.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace OneHub.Common.Protocols.OneBot11.Events
 
         public sealed class Response
         {
-            public List<AbstractMessageSegment> Reply { get; set; }
+            public Message Reply { get; set; }
             public bool AutoEscape { get; set; }
         }
 

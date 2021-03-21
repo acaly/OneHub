@@ -98,7 +98,7 @@ namespace OneHub.Common.Definitions
                 //We need a method to create the private type GeneratedMessageHandler from this OnMessage method.
                 //Make a factory method and pass it into ctor through the value-init'ed field list.
                 var msgFactoryField = ilEnv.AddReadOnlyField<Func<Action<MessageBuffer>, IMessageHandler>>("_sys_msgHandlerFactory",
-                    func => new GeneratedMessageHandler(new() { OnMessageMethod = func }));
+                    func => new GeneratedMessageHandler(new() { OnMessageMethod = func, Decoder = GetBinaryDecoder(t) }));
 
                 //Init readonly fields.
                 il.Emit(OpCodes.Ldarg_0);
@@ -144,10 +144,10 @@ namespace OneHub.Common.Definitions
         {
             lock (_wsImpl)
             {
-                if (!_wsImpl.TryGetValue(typeof(TImpl), out var p))
+                if (!_wsImpl.TryGetValue(typeof(TInterface), out var p))
                 {
                     p = BuildWebSocketImplFactory(typeof(TInterface), GetProtocolInfo(typeof(TInterface)));
-                    _wsImpl[typeof(TImpl)] = p;
+                    _wsImpl[typeof(TInterface)] = p;
                 }
                 return p(obj);
             }
@@ -228,6 +228,7 @@ namespace OneHub.Common.Definitions
                     {
                         InitMethod = a1,
                         OnMessageMethod = a2,
+                        Decoder = GetBinaryDecoder(protocolInterfaceType),
                     });
                 });
 
@@ -298,12 +299,21 @@ namespace OneHub.Common.Definitions
             }
         }
 
+        private static IBinaryMessageDecoder GetBinaryDecoder(Type protocolInterface)
+        {
+            var attr = protocolInterface.GetCustomAttributes()
+                .OfType<IUseBinaryMessageDecoderAttribute>().SingleOrDefault();
+            return attr?.DecoderType is null ? null :
+                (IBinaryMessageDecoder)Activator.CreateInstance(attr.DecoderType);
+        }
+
         //We don't want to expose any public interfaces to implement. This struct
         //wraps all methods of interest of the generated object.
         private struct GeneratedImplMethods
         {
             public Action<AbstractWebSocketConnection> InitMethod;
             public Action<MessageBuffer> OnMessageMethod;
+            public IBinaryMessageDecoder Decoder;
         }
 
         private sealed class GeneratedMessageHandler : IMessageHandler
@@ -318,6 +328,10 @@ namespace OneHub.Common.Definitions
             public void Init(AbstractWebSocketConnection connection)
             {
                 _generatedImplMethods.InitMethod?.Invoke(connection);
+                if (_generatedImplMethods.Decoder is not null)
+                {
+                    connection.AddBinaryMessageDecoder(_generatedImplMethods.Decoder);
+                }
             }
 
             public bool CanHandle(MessageBuffer message)

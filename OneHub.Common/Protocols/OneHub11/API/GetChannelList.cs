@@ -10,7 +10,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     [OneHub11ApiRequest]
     public sealed class GetChannelList
     {
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public List<GetChannelInfo> Channels { get; set; }

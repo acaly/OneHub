@@ -12,7 +12,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     {
         public string MessageId { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
         }

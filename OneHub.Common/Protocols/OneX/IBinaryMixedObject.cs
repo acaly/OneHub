@@ -10,10 +10,5 @@ namespace OneHub.Common.Protocols.OneX
     public interface IBinaryMixedObject
     {
         MemoryStream Stream { get; set; }
-
-        internal class Helper<T>
-        {
-            public static bool IsBinaryMixed { get; } = typeof(IBinaryMixedObject).IsAssignableFrom(typeof(T));
-        }
     }
 }

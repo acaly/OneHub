@@ -13,7 +13,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     {
         public ChannelInfo Channel { get; set; }
 
-        [OneHub11ApiResponse]
         public class Response
         {
         }

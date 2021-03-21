@@ -19,7 +19,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
         public RequestContentType RequestContent { get; set; }
         public RequestChildrenType RequestChildren { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public List<MessageInfo> Messages { get; set; }

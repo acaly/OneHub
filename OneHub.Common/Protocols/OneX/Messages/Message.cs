@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Messages
+namespace OneHub.Common.Protocols.OneX.Messages
 {
     [JsonConverter(typeof(MessageConverter))]
     public class Message

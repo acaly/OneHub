@@ -1,6 +1,7 @@
 ﻿using OneHub.Common.Definitions;
 using OneHub.Common.Protocols.OneHub11.API;
 using OneHub.Common.Protocols.OneHub11.Events;
+using OneHub.Common.Protocols.OneX;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace OneHub.Common.Protocols.OneHub11
 {
+    [OneXProtocol]
     public interface IOneHub11
     {
         Task<SendMsg.Response> SendMsgAsync(SendMsg args);

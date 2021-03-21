@@ -14,7 +14,7 @@ namespace OneHub.Common.Connections
         public bool IsBinary { get; internal set; }
 
         //Use default constructor to allow exposing the underlying buffer.
-        internal readonly MemoryStream Data;
+        public readonly MemoryStream RawData = new();
         internal readonly Utf8JsonWriter JsonWriter;
 
         private JsonDocument _jsonDocument;
@@ -30,8 +30,7 @@ namespace OneHub.Common.Connections
                 throw new ArgumentNullException(nameof(owner));
             }
             Owner = owner;
-            Data = new();
-            JsonWriter = new Utf8JsonWriter(Data);
+            JsonWriter = new Utf8JsonWriter(RawData);
         }
 
         public void Dispose()
@@ -41,8 +40,8 @@ namespace OneHub.Common.Connections
 
         public void Clear()
         {
-            Data.Seek(0, SeekOrigin.Begin);
-            Data.SetLength(0);
+            RawData.Seek(0, SeekOrigin.Begin);
+            RawData.SetLength(0);
             _jsonDocument?.Dispose();
             _jsonDocument = null;
             _hasJsonDocument = false;
@@ -59,21 +58,18 @@ namespace OneHub.Common.Connections
                 return _jsonDocument;
             }
 
-            var buffer = Data.GetBuffer();
             try
             {
                 if (IsBinary)
                 {
-                    //Binary message:
-                    //4 byte length of json part
-                    //json part
-                    //binary part
-                    var jsonLength = BitConverter.ToInt32(buffer, 0);
-                    _jsonDocument = JsonDocument.Parse(new ReadOnlyMemory<byte>(buffer, 4, jsonLength));
+                    //Can't decode binary message by itself.
+                    //The decoders are registered on the connection.
+                    _jsonDocument = Owner.TryDecodeBinaryMessage(this);
                 }
                 else
                 {
-                    _jsonDocument = JsonDocument.Parse(new ReadOnlyMemory<byte>(buffer, 0, (int)Data.Length));
+                    var buffer = RawData.GetBuffer();
+                    _jsonDocument = JsonDocument.Parse(new ReadOnlyMemory<byte>(buffer, 0, (int)RawData.Length));
                 }
                 _hasJsonDocument = true;
             }
@@ -102,15 +98,15 @@ namespace OneHub.Common.Connections
             {
                 return (T)_jsonObj;
             }
-            var buffer = Data.GetBuffer();
-            return JsonSerializer.Deserialize<T>(new ReadOnlySpan<byte>(buffer, 0, (int)Data.Length), options);
+            var buffer = RawData.GetBuffer();
+            return JsonSerializer.Deserialize<T>(new ReadOnlySpan<byte>(buffer, 0, (int)RawData.Length), options);
         }
 
         public void WriteBinary(Stream stream)
         {
             Clear();
             IsBinary = true;
-            stream.CopyTo(Data);
+            stream.CopyTo(RawData);
         }
 
         public void ReadBinary(Stream stream)
@@ -119,13 +115,13 @@ namespace OneHub.Common.Connections
             {
                 throw new InvalidOperationException("Cannot read binary data.");
             }
-            Data.CopyTo(stream);
+            RawData.CopyTo(stream);
         }
 
         public void CopyTo(MessageBuffer messageBuffer)
         {
             messageBuffer.Clear();
-            Data.CopyTo(messageBuffer.Data);
+            RawData.CopyTo(messageBuffer.RawData);
             messageBuffer._jsonDocument = _jsonDocument;
             messageBuffer._hasJsonDocument = _hasJsonDocument;
             messageBuffer._jsonObj = _jsonObj;

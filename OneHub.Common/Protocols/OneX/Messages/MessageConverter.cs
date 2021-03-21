@@ -1,5 +1,4 @@
-﻿using OneHub.Common.Protocols.Messages;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace OneHub.Common.Protocols.Messages
+namespace OneHub.Common.Protocols.OneX.Messages
 {
     internal sealed class MessageConverter : JsonConverter<Message>
     {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,6 +37,7 @@ namespace OneHub.Common.Connections.WebSockets
         private bool _disposed;
 
         private readonly List<IMessageHandler> _handlers = new();
+        private IBinaryMessageDecoder[] _decoders = Array.Empty<IBinaryMessageDecoder>();
         private readonly object _receiveLock = new();
         private readonly SemaphoreSlim _sendLock = new(1);
         private readonly byte[] _readBuffer = new byte[1024];
@@ -113,6 +115,42 @@ namespace OneHub.Common.Connections.WebSockets
             }
         }
 
+        public void AddBinaryMessageDecoder(IBinaryMessageDecoder decoder)
+        {
+            //Lock-free add (similar to C# field-like event implementation).
+            while (true)
+            {
+                var oldList = _decoders;
+                var newList = new IBinaryMessageDecoder[oldList.Length + 1];
+                Array.Copy(oldList, newList, oldList.Length);
+                newList[^1] = decoder;
+                if (Interlocked.CompareExchange(ref _decoders, newList, oldList) == oldList)
+                {
+                    return;
+                }
+            }
+        }
+
+        public JsonDocument TryDecodeBinaryMessage(MessageBuffer messageBuffer)
+        {
+            var decoders = _decoders;
+            foreach (var d in decoders)
+            {
+                try
+                {
+                    if (d.TryDecode(messageBuffer, out var ret))
+                    {
+                        return ret;
+                    }
+                }
+                catch (Exception e)
+                {
+                    //TODO log
+                }
+            }
+            return null;
+        }
+
         //This is only called from the main message loop and we don't need a lock.
         private async Task<MessageBuffer> ReceiveMessageInternalAsync()
         {
@@ -122,15 +160,15 @@ namespace OneHub.Common.Connections.WebSockets
             ret.Clear();
 
             //Try reading into MS's buffer (avoids a copy step).
-            if (ret.Data.Capacity != 0)
+            if (ret.RawData.Capacity != 0)
             {
-                var underlyingBuffer = ret.Data.GetBuffer();
+                var underlyingBuffer = ret.RawData.GetBuffer();
 
                 //If we first read and then SetLength, the extended part will be zeroed.
                 //We need to first SetLength.
                 var underlyingBufferLen = underlyingBuffer.Length - 1; //Make it safer?
-                ret.Data.SetLength(underlyingBufferLen);
-                underlyingBuffer = ret.Data.GetBuffer(); //In case it reallocates.
+                ret.RawData.SetLength(underlyingBufferLen);
+                underlyingBuffer = ret.RawData.GetBuffer(); //In case it reallocates.
                 var underlyingBufferMemory = new Memory<byte>(underlyingBuffer, 0, underlyingBufferLen);
 
                 received = await ReceiveBufferAsync(underlyingBufferMemory, _connectionStop.Token);
@@ -139,8 +177,8 @@ namespace OneHub.Common.Connections.WebSockets
                     ReturnMessageBuffer(ret);
                     return null;
                 }
-                ret.Data.SetLength(received.Count);
-                ret.Data.Position = received.Count;
+                ret.RawData.SetLength(received.Count);
+                ret.RawData.Position = received.Count;
             }
 
             //Not enough space. Use our buffer and extend.
@@ -152,7 +190,7 @@ namespace OneHub.Common.Connections.WebSockets
                     ReturnMessageBuffer(ret);
                     return null;
                 }
-                ret.Data.Write(_readBuffer, 0, received.Count);
+                ret.RawData.Write(_readBuffer, 0, received.Count);
                 if (received.EndOfMessage)
                 {
                     break;
@@ -189,8 +227,8 @@ namespace OneHub.Common.Connections.WebSockets
             await _sendLock.WaitAsync();
             try
             {
-                var buffer = msg.Data.GetBuffer();
-                await SendBufferAsync(new ReadOnlyMemory<byte>(buffer, 0, (int)msg.Data.Length), msg.IsBinary, true, _connectionStop.Token);
+                var buffer = msg.RawData.GetBuffer();
+                await SendBufferAsync(new ReadOnlyMemory<byte>(buffer, 0, (int)msg.RawData.Length), msg.IsBinary, true, _connectionStop.Token);
             }
             finally
             {
@@ -298,6 +336,9 @@ namespace OneHub.Common.Connections.WebSockets
         private void HandleMessageInternal(MessageBuffer message, List<IMessageHandler> handlerList)
         {
             FindHandler(message, handlerList);
+
+            //TODO log
+            //Console.WriteLine($"Handle message with {handlerList.Count} handlers.");
 
             if (handlerList.Count != 0)
             {

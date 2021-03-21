@@ -12,7 +12,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
     {
         public string GroupId { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public List<string> Members { get; set; }

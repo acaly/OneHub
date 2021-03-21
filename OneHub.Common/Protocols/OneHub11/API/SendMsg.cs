@@ -1,5 +1,4 @@
-﻿using OneHub.Common.Definitions;
-using OneHub.Common.Protocols.Messages;
+﻿using OneHub.Common.Protocols.OneX.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +15,6 @@ namespace OneHub.Common.Protocols.OneHub11.API
         public string MessageType { get; set; }
         public Message Message { get; set; }
 
-        [OneHub11ApiResponse]
         public sealed class Response
         {
             public string MessageId { get; set; }
