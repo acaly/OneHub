@@ -15,6 +15,7 @@ namespace OneHub.Common.Protocols.OneX.Messages
         public string Proxy { get; set; }
         public string Timeout { get; set; }
 
-        internal override string GetSerializedType() => "image";
+        public override string SerializedType => "image";
+        public override string GetDisplayedText() => "[图片]";
     }
 }

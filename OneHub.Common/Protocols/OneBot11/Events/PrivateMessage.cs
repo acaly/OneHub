@@ -1,23 +1,27 @@
-﻿using OneHub.Common.Protocols.OneX;
+﻿using OneHub.Common.Protocols.OneBot11.Objects;
+using OneHub.Common.Protocols.OneX;
 using OneHub.Common.Protocols.OneX.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace OneHub.Common.Protocols.OneBot11.Events
 {
-    public sealed class PrivateMessage
+    [JsonConverter(typeof(Enum32JsonConverter<PrivateMessageSubType>))]
+    public enum PrivateMessageSubType
     {
-        public sealed class SenderInfo
-        {
-            public ulong UserId { get; set; }
-            public string Nickname { get; set; }
-            public string Sex { get; set; }
-            public int Age { get; set; }
-        }
+        Unknown = 0,
+        Friend = 1,
+        Group = 2,
+        Other = 3,
+    }
 
+    [OneBot11Event]
+    public sealed class PrivateMessage : OneBot11Event
+    {
         public sealed class Response
         {
             public Message Reply { get; set; }
@@ -25,19 +29,16 @@ namespace OneHub.Common.Protocols.OneBot11.Events
         }
 
         [EventId]
-        public string PostType { get; } = "Message";
+        public string PostType => "Message";
         [EventId]
-        public string MessageType { get; } = "Private";
+        public string MessageType => "Private";
 
-        //TODO use DateTime through JsonConverter
-        public long Time { get; set; }
-        public long SelfId { get; set; }
-        public string SubType { get; set; }
+        public PrivateMessageSubType SubType { get; set; }
         public int MessageId { get; set; }
         public ulong UserId { get; set; }
         public Message Message { get; set; }
         public string RawMessage { get; set; }
         public int Font { get; set; }
-        public SenderInfo Sender { get; set; }
+        public UserInfo Sender { get; set; }
     }
 }

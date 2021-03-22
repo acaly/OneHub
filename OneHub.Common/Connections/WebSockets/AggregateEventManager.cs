@@ -46,7 +46,9 @@ namespace OneHub.Common.Connections.WebSockets
         public void Invoke(object sender, T e)
         {
             List<Exception> list = null;
-            foreach (var h in _delegate.InvocationList)
+            var delegateObj = _delegate;
+            if (delegateObj is null) return;
+            foreach (var h in delegateObj.InvocationList)
             {
                 try
                 {

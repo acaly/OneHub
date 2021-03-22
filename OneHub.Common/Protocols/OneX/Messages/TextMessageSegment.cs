@@ -10,6 +10,7 @@ namespace OneHub.Common.Protocols.OneX.Messages
     {
         public string Text { get; set; }
 
-        internal override string GetSerializedType() => "text";
+        public override string SerializedType => "text";
+        public override string GetDisplayedText() => Text;
     }
 }

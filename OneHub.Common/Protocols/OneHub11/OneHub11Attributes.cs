@@ -15,7 +15,6 @@ namespace OneHub.Common.Protocols.OneHub11
         public OneHub11ApiRequestAttribute() : base(typeof(IOneHub11))
         {
         }
-
     }
 
     [AttributeUsage(AttributeTargets.Class)]

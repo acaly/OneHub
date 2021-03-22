@@ -68,7 +68,7 @@ namespace OneHub.Common.Protocols.OneX.Messages
         public override void Write(Utf8JsonWriter writer, AbstractMessageSegment value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
-            writer.WriteString("type", value.GetSerializedType());
+            writer.WriteString("type", value.SerializedType);
             writer.WritePropertyName("data");
             JsonSerializer.Serialize(writer, value, value.GetType(), options);
             writer.WriteEndObject();

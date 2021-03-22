@@ -11,6 +11,7 @@ namespace OneHub.Common.Protocols.OneX.Messages
         public string Type { get; set; }
         public Dictionary<string, string> Data { get; set; }
 
-        internal override string GetSerializedType() => Type;
+        public override string SerializedType => Type;
+        public override string GetDisplayedText() => "[不支持的内容]";
     }
 }

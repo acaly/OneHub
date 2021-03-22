@@ -50,7 +50,6 @@ namespace OneHub.Common.Connections
             IsBinary = false;
         }
 
-#warning ToJsonDocument should not specify a binary format
         public JsonDocument ToJsonDocument()
         {
             if (_hasJsonDocument)

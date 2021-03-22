@@ -49,7 +49,9 @@ namespace OneHub.Common.Definitions
         public async Task InvokeAsync(object sender, T e)
         {
             List<Exception> list = null;
-            foreach (var h in _delegate.InvocationList)
+            var delegateObj = _delegate;
+            if (delegateObj is null) return;
+            foreach (var h in delegateObj.InvocationList)
             {
                 try
                 {

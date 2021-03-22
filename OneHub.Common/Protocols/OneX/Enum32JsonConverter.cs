@@ -49,21 +49,22 @@ namespace OneHub.Common.Protocols.OneX
                 var list = JsonSerializer.Deserialize<List<string>>(ref reader, options);
                 foreach (var str in list)
                 {
-                    if (!_strToValue.TryGetValue(str, out var val))
+                    if (_strToValue.TryGetValue(str, out var val))
                     {
-                        throw new JsonException("Unknown enum value " + str);
+                        //We don't want to throw here. That will terminate serialization, which
+                        //effectively ignores all messages if implementation adds a new enum value.
+                        ret = Add(ret, val);
                     }
-                    ret = Add(ret, val);
                 }
             }
             else
             {
                 var str = JsonSerializer.Deserialize<string>(ref reader, options);
-                if (!_strToValue.TryGetValue(str, out var val))
+                if (_strToValue.TryGetValue(str, out var val))
                 {
-                    throw new JsonException("Unknown enum value " + str);
+                    //See comment above.
+                    ret = val;
                 }
-                ret = val;
             }
             return ret;
         }

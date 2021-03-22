@@ -15,17 +15,34 @@ namespace OneHub.Common.Protocols.OneX.Messages
         {
             if (reader.TokenType == JsonTokenType.String)
             {
-                return new() { Segments = ParseCQString(reader.GetString(), options) };
+                var rawString = reader.GetString();
+                List<AbstractMessageSegment> segments = null;
+                try
+                {
+                    segments = ParseCQString(rawString, options);
+                }
+                catch
+                {
+                    //Ignore parsing error, because OneBot11 allows using the raw string as message.
+                }
+                return new()
+                {
+                    RawSegments = segments,
+                    RawString = rawString,
+                };
             }
             else
             {
-                return new() { Segments = JsonSerializer.Deserialize<List<AbstractMessageSegment>>(ref reader, options) };
+                return new()
+                {
+                    RawSegments = JsonSerializer.Deserialize<List<AbstractMessageSegment>>(ref reader, options),
+                };
             }
         }
 
         public override void Write(Utf8JsonWriter writer, Message value, JsonSerializerOptions options)
         {
-            JsonSerializer.Serialize(writer, value.Segments, options);
+            JsonSerializer.Serialize(writer, value.GetSegments(useRawString: true), options);
         }
 
         private static List<AbstractMessageSegment> ParseCQString(string str, JsonSerializerOptions options)

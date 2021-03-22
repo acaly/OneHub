@@ -141,14 +141,29 @@ namespace OneHub.Common.Protocols.OneX
         }
 
         private static Func<object, AsyncEventManager<TEvent>, MessageBuffer, Task> HandleRecv<TEvent>()
+            where TEvent : class
         {
             return async (sender, eventManager, msgBuffer) =>
             {
-                //TODO handle deserialize exception?
-                var eventData = MessageSerializer.Deserialize<TEvent>(msgBuffer);
-                msgBuffer.Dispose();
-                //TODO handle exceptions? (see comments on AsyncEventManager)
-                await eventManager.InvokeAsync(sender, eventData);
+                TEvent eventData = null;
+                try
+                {
+                    //TODO handle deserialize exception?
+                    eventData = MessageSerializer.Deserialize<TEvent>(msgBuffer);
+                }
+                catch (Exception e)
+                {
+                    //TODO log
+                }
+                finally
+                {
+                    msgBuffer.Dispose();
+                }
+                if (eventData is not null)
+                {
+                    //TODO handle exceptions? (see comments on AsyncEventManager)
+                    await eventManager.InvokeAsync(sender, eventData);
+                }
             };
         }
         
